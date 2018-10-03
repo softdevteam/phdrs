@@ -1,0 +1,17 @@
+language: rust
+rust: stable
+cache: cargo
+
+before_script:
+    - export PATH="$PATH:$HOME/.cargo/bin"
+
+script:
+    # Installing rustfmt stops auto-generated code from being all dumped on one
+    # line. This is problematic because it can cause warnings to be so long
+    # that Travis terminates the build.
+    - rustup component add rustfmt-preview
+    - cargo build
+    - cargo build --examples
+    - cargo doc --no-deps
+    - cargo test
+    - ./target/debug/examples/dump_phdrs
