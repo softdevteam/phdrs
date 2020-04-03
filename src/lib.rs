@@ -52,12 +52,12 @@ use std::{
 //
 // Until then, we avoid namespace pollution by containing all the auto-generated stuff inside a
 // (private) sub-module, exposing only what we intend to be public.
-#[allow(clippy)] // Don't lint this!
 mod p_ffi {
     #![allow(non_upper_case_globals)]
     #![allow(non_camel_case_types)]
     #![allow(non_snake_case)]
     #![allow(dead_code)]
+    #![allow(improper_ctypes)]
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
     // Re-define C types that are usually erased by C macros.
