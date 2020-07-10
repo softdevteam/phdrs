@@ -15,3 +15,5 @@ cargo fmt --all -- --check
 
 cargo test
 cargo test --release
+
+cargo run --release --example dump_phdrs
