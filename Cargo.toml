@@ -6,7 +6,7 @@ edition = "2018"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-libc = "0.2"
+libc = "0.2.71"
 
 [build-dependencies]
-bindgen = "0.52"
+bindgen = "0.54.1"

@@ -1,6 +1,6 @@
 extern crate libc;
 
-use libc::{c_int, size_t};
+use libc::c_int;
 use std::{
     ffi::{CStr, CString},
     fmt::{self, Debug},
@@ -251,7 +251,7 @@ pub fn objects() -> Vec<Object> {
     // Callback for `dl_iterate_phdr(3)`.
     unsafe extern "C" fn collect_objs(
         info: *mut p_ffi::dl_phdr_info,
-        _sz: size_t,
+        _sz: u64,
         data: *mut c_void,
     ) -> c_int {
         push_object(&mut *(data as *mut Vec<Object>), &*info); // Get Rust to push the object.
