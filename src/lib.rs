@@ -1,6 +1,8 @@
-extern crate libc;
-
-use libc::c_int;
+use elf::types::{PF_R, PF_W, PF_X};
+use libc::{
+    c_int, dl_iterate_phdr, dl_phdr_info, PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_INTERP,
+    PT_LOAD, PT_LOOS, PT_NOTE, PT_NULL, PT_PHDR, PT_SHLIB, PT_TLS,
+};
 use std::{
     ffi::{CStr, CString},
     fmt::{self, Debug},
@@ -8,71 +10,36 @@ use std::{
     os::raw::c_void,
 };
 
-// We are using bindgen to access the `dl_iterate_phdr` API and its types. The `libc` crate exposes
-// everything we need, but only on *some* platforms. If the `libc` definitions ever become portable
-// then it would make sense to use those instead of bindgen. There's an issue for this here:
-// https://github.com/rust-lang/libc/issues/1066
-//
-// Until then, we avoid namespace pollution by containing all the auto-generated stuff inside a
-// (private) sub-module, exposing only what we intend to be public.
-mod p_ffi {
-    #![allow(non_upper_case_globals)]
-    #![allow(non_camel_case_types)]
-    #![allow(non_snake_case)]
-    #![allow(dead_code)]
-    #![allow(improper_ctypes)]
-    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-
-    // Re-define C types that are usually erased by C macros.
-    #[cfg(target_pointer_width = "64")]
-    pub type Elf_Phdr = Elf64_Phdr;
-    #[cfg(target_pointer_width = "32")]
-    pub type Elf_Phdr = Elf32_Phdr;
-
-    #[cfg(target_pointer_width = "64")]
-    pub type Elf_Half = Elf64_Half;
-    #[cfg(target_pointer_width = "32")]
-    pub type Elf_Half = Elf32_Half;
-
-    #[cfg(target_pointer_width = "64")]
-    pub type Elf_Addr = Elf64_Addr;
-    #[cfg(target_pointer_width = "32")]
-    pub type Elf_Addr = Elf32_Addr;
-
-    #[cfg(target_pointer_width = "64")]
-    pub type Elf_Off = Elf64_Off;
-    #[cfg(target_pointer_width = "32")]
-    pub type Elf_Off = Elf32_Off;
-
-    #[cfg(target_pointer_width = "64")]
-    pub type Elf_Word = Elf64_Word;
-    #[cfg(target_pointer_width = "32")]
-    pub type Elf_Word = Elf32_Word;
-
-    #[cfg(target_pointer_width = "64")]
-    pub type Elf_Xword = u64;
-    #[cfg(target_pointer_width = "32")]
-    pub type Elf_Xword = u32;
-}
-
-pub use p_ffi::{
-    Elf_Addr, Elf_Half, Elf_Off, Elf_Phdr, Elf_Word, Elf_Xword, PF_MASKPROC, PF_R, PF_W, PF_X,
-    PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_HIOS, PT_HIPROC, PT_INTERP, PT_LOAD, PT_LOOS,
-    PT_LOPROC, PT_NOTE, PT_NULL, PT_PHDR, PT_SHLIB, PT_TLS,
+#[cfg(target_pointer_width = "64")]
+use libc::{
+    Elf64_Addr as Elf_Addr, Elf64_Half as Elf_Half, Elf64_Off as Elf_Off, Elf64_Phdr as Elf_Phdr,
+    Elf64_Word as Elf_Word, Elf64_Xword as Elf_Xword,
 };
+
+#[cfg(target_pointer_width = "32")]
+use libc::{
+    Elf32_Addr as Elf_Addr, Elf32_Half as Elf_Half, Elf32_Off as Elf_Off, Elf32_Phdr as Elf_Phdr,
+    Elf32_Word as Elf_Word, Elf32_Xword as Elf_Xword,
+};
+
+// At the time of writing these ELF constants are defined neither in `elf` nor `libc`.
+const PF_MASKPROC: u32 = 0xf0000000;
+const PT_HIOS: u32 = 0x6fffffff;
+const PT_LOPROC: u32 = 0x70000000;
+const PT_HIPROC: u32 = 0x7fffffff;
 
 /// Contains information about an "object" in the virtual address space.
 /// This corresponds with a `dl_phdr_info` in C. Note that the contents of the C struct differ
 /// between platforms. We expose only the common fields for now.
 pub struct Object {
     /// The base address of the object.
-    addr: p_ffi::Elf_Addr,
+    addr: Elf_Addr,
     /// The name of the object.
     name: CString,
     /// Pointer to program headers C array.
-    phdrs: *const p_ffi::Elf_Phdr,
+    phdrs: *const Elf_Phdr,
     /// The number of program headers.
-    num_phdrs: p_ffi::Elf_Half,
+    num_phdrs: Elf_Half,
 }
 
 impl Object {
@@ -96,7 +63,7 @@ impl Object {
     }
 
     /// Returns the number of program headers.
-    pub fn num_phdrs(&self) -> p_ffi::Elf_Half {
+    pub fn num_phdrs(&self) -> Elf_Half {
         self.num_phdrs
     }
 }
@@ -111,7 +78,7 @@ impl Debug for Object {
     }
 }
 
-pub struct ProgramHeader(*const p_ffi::Elf_Phdr);
+pub struct ProgramHeader(*const Elf_Phdr);
 
 impl ProgramHeader {
     /// Returns the segment type (as one of the `PT_*` constants).
@@ -160,7 +127,6 @@ impl ProgramHeader {
 impl Debug for ProgramHeader {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut to_write = String::from("ProgramHeader(");
-
         let type_ = self.type_();
         let type_str = match type_ {
             PT_NULL => "PT_NULL",
@@ -184,13 +150,13 @@ impl Debug for ProgramHeader {
 
         let flags = self.flags();
         let mut flag_strs = Vec::new();
-        if flags & PF_X != 0 {
+        if flags & PF_X.0 != 0 {
             flag_strs.push("PF_X");
         }
-        if flags & PF_W != 0 {
+        if flags & PF_W.0 != 0 {
             flag_strs.push("PF_W");
         }
-        if flags & PF_R != 0 {
+        if flags & PF_R.0 != 0 {
             flag_strs.push("PF_R");
         }
         if flags & PF_MASKPROC != 0 {
@@ -211,8 +177,8 @@ impl Debug for ProgramHeader {
 ///
 /// Each program header describes an ELF segment loaded in the virtual adress space.
 pub struct ProgramHeaderIterator {
-    ptr: *const p_ffi::Elf_Phdr, // Pointer to the next raw `Elf_Phdr`.
-    num: p_ffi::Elf_Half,        // How many left.
+    ptr: *const Elf_Phdr, // Pointer to the next raw `Elf_Phdr`.
+    num: Elf_Half,        // How many left.
 }
 
 impl Iterator for ProgramHeaderIterator {
@@ -235,7 +201,7 @@ pub fn objects() -> Vec<Object> {
     let mut ret = Vec::new();
 
     // Pushes an `Object` into the result vector on the behalf of C.
-    extern "C" fn push_object(objs: &mut Vec<Object>, obj: &p_ffi::dl_phdr_info) {
+    extern "C" fn push_object(objs: &mut Vec<Object>, obj: &dl_phdr_info) {
         let name = unsafe { CStr::from_ptr(obj.dlpi_name) }.to_owned();
         // We have to copy the `dl_phdr_info` struct out, as the same memory buffer is used for
         // each entry during the iteration process. Otherwise we could have used a vector of
@@ -250,8 +216,8 @@ pub fn objects() -> Vec<Object> {
 
     // Callback for `dl_iterate_phdr(3)`.
     unsafe extern "C" fn collect_objs(
-        info: *mut p_ffi::dl_phdr_info,
-        _sz: u64,
+        info: *mut dl_phdr_info,
+        _sz: usize,
         data: *mut c_void,
     ) -> c_int {
         push_object(&mut *(data as *mut Vec<Object>), &*info); // Get Rust to push the object.
@@ -259,7 +225,7 @@ pub fn objects() -> Vec<Object> {
     };
 
     let ret_void_p = &mut ret as *mut Vec<Object> as *mut c_void;
-    unsafe { p_ffi::dl_iterate_phdr(Some(collect_objs), ret_void_p) };
+    unsafe { dl_iterate_phdr(Some(collect_objs), ret_void_p) };
 
     ret
 }
