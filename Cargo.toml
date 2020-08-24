@@ -7,6 +7,4 @@ license = "Apache-2.0 OR MIT"
 
 [dependencies]
 libc = "0.2.71"
-
-[build-dependencies]
-bindgen = "0.54.1"
+elf = "0.0.10"
