@@ -9,4 +9,6 @@ license = "Apache-2.0 OR MIT"
 libc = "0.2.71"
 
 [build-dependencies]
-bindgen = "0.54.1"
+# Can't use 0.55.0 due to:
+# https://github.com/rust-lang/rust-bindgen/issues/1880
+bindgen = "=0.54.0"
