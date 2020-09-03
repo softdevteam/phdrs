@@ -1,7 +1,8 @@
-use elf::types::{PF_R, PF_W, PF_X};
-use libc::{
-    c_int, dl_iterate_phdr, dl_phdr_info, PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_INTERP,
-    PT_LOAD, PT_LOOS, PT_NOTE, PT_NULL, PT_PHDR, PT_SHLIB, PT_TLS,
+pub use elf::types::{PF_R, PF_W, PF_X};
+use libc::{c_int, dl_iterate_phdr, dl_phdr_info};
+pub use libc::{
+    PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_INTERP, PT_LOAD, PT_LOOS, PT_NOTE, PT_NULL,
+    PT_PHDR, PT_SHLIB, PT_TLS,
 };
 use std::{
     ffi::{CStr, CString},
