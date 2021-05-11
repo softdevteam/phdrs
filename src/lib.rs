@@ -223,7 +223,7 @@ pub fn objects() -> Vec<Object> {
     ) -> c_int {
         push_object(&mut *(data as *mut Vec<Object>), &*info); // Get Rust to push the object.
         0
-    };
+    }
 
     let ret_void_p = &mut ret as *mut Vec<Object> as *mut c_void;
     unsafe { dl_iterate_phdr(Some(collect_objs), ret_void_p) };
