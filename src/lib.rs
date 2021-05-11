@@ -59,8 +59,8 @@ impl Object {
     }
 
     /// Returns the name of the object.
-    pub fn name(&self) -> &CString {
-        &self.name
+    pub fn name(&self) -> &CStr {
+        self.name.as_c_str()
     }
 
     /// Returns the number of program headers.
@@ -223,7 +223,7 @@ pub fn objects() -> Vec<Object> {
     ) -> c_int {
         push_object(&mut *(data as *mut Vec<Object>), &*info); // Get Rust to push the object.
         0
-    };
+    }
 
     let ret_void_p = &mut ret as *mut Vec<Object> as *mut c_void;
     unsafe { dl_iterate_phdr(Some(collect_objs), ret_void_p) };
@@ -247,7 +247,7 @@ mod tests {
         for o in objs {
             assert_ne!(o.addr(), 0);
 
-            let obj_name = o.name().clone().into_string().unwrap();
+            let obj_name = o.name().to_str().unwrap();
             let path = if cfg!(target_os = "linux") && obj_name == "" {
                 // On Linux, the main binary has an empty name.
                 env::current_exe().unwrap()
