@@ -1,8 +1,8 @@
 pub use elf::types::{PF_R, PF_W, PF_X};
 use libc::{c_int, dl_iterate_phdr, dl_phdr_info};
 pub use libc::{
-    PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_INTERP, PT_LOAD, PT_LOOS, PT_NOTE, PT_NULL,
-    PT_PHDR, PT_SHLIB, PT_TLS,
+    PF_MASKPROC, PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_HIOS, PT_HIPROC, PT_INTERP, PT_LOAD,
+    PT_LOOS, PT_LOPROC, PT_NOTE, PT_NULL, PT_PHDR, PT_SHLIB, PT_TLS,
 };
 use std::{
     ffi::{CStr, CString},
@@ -22,12 +22,6 @@ use libc::{
     Elf32_Addr as Elf_Addr, Elf32_Half as Elf_Half, Elf32_Off as Elf_Off, Elf32_Phdr as Elf_Phdr,
     Elf32_Word as Elf_Word, Elf32_Xword as Elf_Xword,
 };
-
-// At the time of writing these ELF constants are defined neither in `elf` nor `libc`.
-const PF_MASKPROC: u32 = 0xf0000000;
-const PT_HIOS: u32 = 0x6fffffff;
-const PT_LOPROC: u32 = 0x70000000;
-const PT_HIPROC: u32 = 0x7fffffff;
 
 /// Contains information about an "object" in the virtual address space.
 /// This corresponds with a `dl_phdr_info` in C. Note that the contents of the C struct differ
