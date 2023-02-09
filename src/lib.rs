@@ -26,6 +26,7 @@ use libc::{
 /// Contains information about an "object" in the virtual address space.
 /// This corresponds with a `dl_phdr_info` in C. Note that the contents of the C struct differ
 /// between platforms. We expose only the common fields for now.
+#[derive(Clone)]
 pub struct Object {
     /// The base address of the object.
     addr: Elf_Addr,
@@ -73,6 +74,7 @@ impl Debug for Object {
     }
 }
 
+#[derive(Clone)]
 pub struct ProgramHeader(*const Elf_Phdr);
 
 impl ProgramHeader {
