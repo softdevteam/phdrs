@@ -19,6 +19,6 @@ cargo test --release
 cargo run --release --example dump_phdrs
 
 # Test no_std
-cargo test --no-default-features --features=alloc
-cargo test --no-default-features --features=alloc --release
-cargo run --no-default-features --features=alloc --release --example dump_phdrs
+cargo test --no-default-features
+cargo test --no-default-features --release
+cargo run --no-default-features --release --example dump_phdrs

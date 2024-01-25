@@ -1,4 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg(not(feature = "rustc-dep-of-std"))]
+extern crate alloc;
 
 use libc::{c_int, c_void, dl_iterate_phdr, dl_phdr_info};
 pub use libc::{
@@ -12,12 +14,10 @@ use core::{
     iter::Iterator,
 };
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
-#[cfg(feature = "alloc")]
+#[cfg(not(feature = "std"))]
 use alloc::{borrow::ToOwned, ffi::CString, format, string::String, vec::Vec};
 
-#[cfg(not(feature = "alloc"))]
+#[cfg(feature = "std")]
 use std::ffi::CString;
 
 #[cfg(target_pointer_width = "64")]
@@ -89,7 +89,7 @@ impl Object {
 }
 
 impl Debug for Object {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "Object {{ addr: 0x{:x}, name: {:?}, phdrs: {:?}, num_phdrs: {} }}",
@@ -145,7 +145,7 @@ impl ProgramHeader {
 }
 
 impl Debug for ProgramHeader {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut to_write = String::from("ProgramHeader(");
         let type_ = self.type_();
         let type_str = match type_ {
