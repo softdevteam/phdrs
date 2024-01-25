@@ -35,6 +35,8 @@ pub struct Object {
     phdrs: *const Elf_Phdr,
     /// The number of program headers.
     num_phdrs: Elf_Half,
+    /// The current threads TLS data.
+    tls_data: *const c_void,
 }
 
 impl Object {
@@ -60,6 +62,13 @@ impl Object {
     /// Returns the number of program headers.
     pub fn num_phdrs(&self) -> Elf_Half {
         self.num_phdrs
+    }
+
+    /// Returns a pointer to the current thread's TLS data. This will point to
+    /// an address inside the TLS segment at some fixed offset calculated from
+    /// the current thread.
+    pub fn tls_data(&self) -> *const c_void {
+        self.tls_data
     }
 }
 
@@ -206,6 +215,7 @@ pub fn objects() -> Vec<Object> {
             name,
             phdrs: obj.dlpi_phdr,
             num_phdrs: obj.dlpi_phnum,
+            tls_data: obj.dlpi_tls_data,
         });
     }
 
