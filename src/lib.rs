@@ -1,15 +1,24 @@
-pub use elf::types::{PF_R, PF_W, PF_X};
-use libc::{c_int, dl_iterate_phdr, dl_phdr_info};
+#![cfg_attr(not(feature = "std"), no_std)]
+
+use libc::{c_int, c_void, dl_iterate_phdr, dl_phdr_info};
 pub use libc::{
     PF_MASKPROC, PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_HIOS, PT_HIPROC, PT_INTERP, PT_LOAD,
     PT_LOOS, PT_LOPROC, PT_NOTE, PT_NULL, PT_PHDR, PT_SHLIB, PT_TLS,
 };
-use std::{
-    ffi::{CStr, CString},
+
+use core::{
+    ffi::CStr,
     fmt::{self, Debug},
     iter::Iterator,
-    os::raw::c_void,
 };
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(feature = "alloc")]
+use alloc::{borrow::ToOwned, ffi::CString, format, string::String, vec::Vec};
+
+#[cfg(not(feature = "alloc"))]
+use std::ffi::CString;
 
 #[cfg(target_pointer_width = "64")]
 use libc::{
@@ -22,6 +31,13 @@ use libc::{
     Elf32_Addr as Elf_Addr, Elf32_Half as Elf_Half, Elf32_Off as Elf_Off, Elf32_Phdr as Elf_Phdr,
     Elf32_Word as Elf_Word, Elf32_Xword as Elf_Xword,
 };
+
+/// Executable program segment
+const PF_X: u32 = 1;
+/// Writable program segment
+const PF_W: u32 = 2;
+/// Readable program segment
+const PF_R: u32 = 4;
 
 /// Contains information about an "object" in the virtual address space.
 /// This corresponds with a `dl_phdr_info` in C. Note that the contents of the C struct differ
@@ -154,13 +170,13 @@ impl Debug for ProgramHeader {
 
         let flags = self.flags();
         let mut flag_strs = Vec::new();
-        if flags & PF_X.0 != 0 {
+        if flags & PF_X != 0 {
             flag_strs.push("PF_X");
         }
-        if flags & PF_W.0 != 0 {
+        if flags & PF_W != 0 {
             flag_strs.push("PF_W");
         }
-        if flags & PF_R.0 != 0 {
+        if flags & PF_R != 0 {
             flag_strs.push("PF_R");
         }
         if flags & PF_MASKPROC != 0 {
@@ -238,9 +254,6 @@ pub fn objects() -> Vec<Object> {
 #[cfg(test)]
 mod tests {
     use super::objects;
-    use std::{env, path::PathBuf};
-
-    const LINUX_VDSO: &str = "linux-vdso.so.1";
 
     // Check that iteration works.
     // Since the address space is often randomised, there's not a great deal we can actually test.
@@ -251,17 +264,22 @@ mod tests {
         for o in objs {
             assert_ne!(o.addr(), 0);
 
-            let obj_name = o.name().to_str().unwrap();
-            let path = if cfg!(target_os = "linux") && obj_name == "" {
-                // On Linux, the main binary has an empty name.
-                env::current_exe().unwrap()
-            } else {
-                PathBuf::from(obj_name)
-            };
+            #[cfg(feature = "std")]
+            {
+                const LINUX_VDSO: &str = "linux-vdso.so.1";
 
-            // Check the object exists on disk (unless it's a VDSO).
-            if !(cfg!(target_os = "linux") && path.to_str().unwrap() == LINUX_VDSO) {
-                assert!(path.exists());
+                let obj_name = o.name().to_str().unwrap();
+                let path = if cfg!(target_os = "linux") && obj_name == "" {
+                    // On Linux, the main binary has an empty name.
+                    std::env::current_exe().unwrap()
+                } else {
+                    std::path::PathBuf::from(obj_name)
+                };
+
+                // Check the object exists on disk (unless it's a VDSO).
+                if !(cfg!(target_os = "linux") && path.to_str().unwrap() == LINUX_VDSO) {
+                    assert!(path.exists());
+                }
             }
 
             assert_ne!(o.num_phdrs(), 0);
