@@ -7,4 +7,3 @@ license = "Apache-2.0 OR MIT"
 
 [dependencies]
 libc = "0.2.94"
-elf = "0.0.10"
