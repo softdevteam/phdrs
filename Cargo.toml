@@ -6,4 +6,9 @@ edition = "2018"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-libc = "0.2.94"
+libc = { version = "0.2.94", default-features = false }
+
+[features]
+default = ["std"]
+std = []
+alloc = []
