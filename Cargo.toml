@@ -2,14 +2,14 @@
 name = "phdrs"
 version = "0.1.0"
 authors = ["Edd Barrett <vext01@gmail.com>"]
-edition = "2018"
+edition = "2024"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-libc = { version = "0.2.94", default-features = false }
-core = { version = "1.0.0", optional = true, package = 'rustc-std-workspace-core' }
-compiler_builtins = { version = "0.1.16", optional = true }
-alloc = { version = "1.0.0", optional = true, package = "rustc-std-workspace-alloc" }
+libc = { version = "0.2.172", default-features = false }
+core = { version = "1.0.1", optional = true, package = 'rustc-std-workspace-core' }
+compiler_builtins = { version = "0.1.156", optional = true }
+alloc = { version = "1.0.1", optional = true, package = "rustc-std-workspace-alloc" }
 
 [features]
 default = ["std"]
