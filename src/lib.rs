@@ -2,11 +2,11 @@
 #![cfg(not(feature = "rustc-dep-of-std"))]
 extern crate alloc;
 
-use libc::{c_int, c_void, dl_iterate_phdr, dl_phdr_info};
 pub use libc::{
     PF_MASKPROC, PF_R, PF_W, PF_X, PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_HIOS, PT_HIPROC,
     PT_INTERP, PT_LOAD, PT_LOOS, PT_LOPROC, PT_NOTE, PT_NULL, PT_PHDR, PT_SHLIB, PT_TLS,
 };
+use libc::{c_int, c_void, dl_iterate_phdr, dl_phdr_info};
 
 use core::{
     ffi::CStr,
@@ -237,7 +237,8 @@ pub fn objects() -> Vec<Object> {
         _sz: usize,
         data: *mut c_void,
     ) -> c_int {
-        push_object(&mut *(data as *mut Vec<Object>), &*info); // Get Rust to push the object.
+        let data = data as *mut Vec<Object>;
+        push_object(unsafe { &mut *data }, unsafe { &*info });
         0
     }
 
