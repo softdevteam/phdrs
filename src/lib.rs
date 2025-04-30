@@ -4,8 +4,8 @@ extern crate alloc;
 
 use libc::{c_int, c_void, dl_iterate_phdr, dl_phdr_info};
 pub use libc::{
-    PF_MASKPROC, PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_HIOS, PT_HIPROC, PT_INTERP, PT_LOAD,
-    PT_LOOS, PT_LOPROC, PT_NOTE, PT_NULL, PT_PHDR, PT_SHLIB, PT_TLS,
+    PF_MASKPROC, PF_R, PF_W, PF_X, PT_DYNAMIC, PT_GNU_EH_FRAME, PT_GNU_RELRO, PT_HIOS, PT_HIPROC,
+    PT_INTERP, PT_LOAD, PT_LOOS, PT_LOPROC, PT_NOTE, PT_NULL, PT_PHDR, PT_SHLIB, PT_TLS,
 };
 
 use core::{
@@ -31,13 +31,6 @@ use libc::{
     Elf32_Addr as Elf_Addr, Elf32_Half as Elf_Half, Elf32_Off as Elf_Off, Elf32_Phdr as Elf_Phdr,
     Elf32_Word as Elf_Word, Elf32_Xword as Elf_Xword,
 };
-
-/// Executable program segment
-const PF_X: u32 = 1;
-/// Writable program segment
-const PF_W: u32 = 2;
-/// Readable program segment
-const PF_R: u32 = 4;
 
 /// Contains information about an "object" in the virtual address space.
 /// This corresponds with a `dl_phdr_info` in C. Note that the contents of the C struct differ
